@@ -1,0 +1,25 @@
+# ユーザーが入力したデータ
+kakeibo.csv
+budgets.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.Python
+
+# PyInstaller
+build/
+dist/
+*.iconset/
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# エディタ
+.idea/
+.vscode/
+*.swp
