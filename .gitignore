@@ -1,6 +1,9 @@
 # ユーザーが入力したデータ
 kakeibo.csv
 budgets.json
+kakeibo.db
+kakeibo.db-shm
+kakeibo.db-wal
 
 # Python
 __pycache__/

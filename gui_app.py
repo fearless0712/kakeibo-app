@@ -1,13 +1,13 @@
 """Tkinterで作った、ウィンドウ版の家計簿アプリ。"""
 
 import tkinter as tk
-import json
 import platform
 from datetime import datetime, timedelta
 from tkinter import messagebox, simpledialog, ttk
 
 # app.pyにあるCSV操作とカテゴリ一覧を再利用します。
-from app import CATEGORIES, get_data_directory, initialize_file, load_records, save_records
+from app import CATEGORIES, initialize_file, load_records, save_records
+from database import get_budgets, set_month_budget
 
 
 # 画面全体で使う色をここにまとめています。
@@ -33,9 +33,6 @@ CATEGORY_COLORS = {
     "住居費": "#34D399",
     "その他": "#94A3B8",
 }
-
-BUDGET_FILE = get_data_directory() / "budgets.json"
-
 
 class KakeiboApp:
     """家計簿ウィンドウの部品と動作をまとめたクラスです。"""
@@ -418,20 +415,13 @@ class KakeiboApp:
         return card
 
     def load_budgets(self):
-        """月別予算をJSONファイルから読み込みます。"""
-        if not BUDGET_FILE.exists():
-            return {}
-        try:
-            with BUDGET_FILE.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-            return data if isinstance(data, dict) else {}
-        except (json.JSONDecodeError, OSError):
-            return {}
+        """月別予算をSQLiteから読み込みます。"""
+        return get_budgets()
 
     def save_budgets(self, budgets):
-        """月別予算をJSONファイルへ保存します。"""
-        with BUDGET_FILE.open("w", encoding="utf-8") as file:
-            json.dump(budgets, file, ensure_ascii=False, indent=2)
+        """月別予算をSQLiteへ保存します。"""
+        for month, amount in budgets.items():
+            set_month_budget(month, int(amount))
 
     def set_budget(self):
         """今月の予算を入力する小さなダイアログを開きます。"""

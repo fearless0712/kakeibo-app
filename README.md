@@ -17,6 +17,9 @@
 支出を入力すると、今月の支出や残り予算、カテゴリ別の割合、月ごとの推移を
 ホーム画面ですぐに確認できます。
 
+同じSQLiteデータを利用するFlask製Web版（PWA）もあり、PC・スマートフォンの
+ブラウザやホーム画面から利用できます。
+
 ダークテーマと大きなボタンを採用し、macOSやWindowsのデスクトップアプリとして
 直感的に操作できるデザインを目指しています。入力したデータが外部サービスへ
 送信されることはありません。
@@ -74,6 +77,15 @@
 - PyInstallerによる `.app` ビルド
 - Finderからのダブルクリック起動
 
+### Web / PWA
+
+- Flaskによるブラウザ版
+- PC・スマートフォン対応のレスポンシブデザイン
+- ダークテーマのダッシュボード
+- ホーム画面へのインストール
+- Service Workerによるアプリシェルのキャッシュ
+- デスクトップ版と同じSQLiteデータを利用
+
 ## 起動方法
 
 ### 必要環境
@@ -112,6 +124,27 @@ python gui_app.py
 python3 app.py
 ```
 
+### Web版（PWA）を起動
+
+仮想環境を作成し、Flaskをインストールします。
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements-web.txt
+python3 web/app.py
+```
+
+PCのブラウザで [http://127.0.0.1:5000](http://127.0.0.1:5000) を開きます。
+
+同じWi-Fiに接続したスマートフォンから確認するときは、MacまたはPCの
+ローカルIPアドレスを使って `http://<PCのIPアドレス>:5000` を開きます。
+
+> [!NOTE]
+> PWAのホーム画面インストールとService Workerは、`localhost` またはHTTPS環境で
+> 利用できます。スマートフォンへ正式にインストールする場合は、HTTPS対応の
+> サーバーへデプロイしてください。
+
 ## Macアプリのビルド
 
 macOS上でPyInstallerを使うと、Finderからダブルクリックで起動できる
@@ -146,36 +179,43 @@ dist/かんたん家計簿.app
 |---|---|---|
 | Python 3 | アプリケーション全体の処理 | 使用中 |
 | Tkinter / ttk | GUI、ダークテーマ、表、グラフ描画 | 使用中 |
-| CSV / JSON | 支出データと月別予算のローカル保存 | 使用中 |
+| Flask / Jinja | Web版のルーティングとHTML生成 | 使用中 |
+| HTML / CSS / JavaScript | レスポンシブUIとグラフ描画 | 使用中 |
+| PWA / Service Worker | ホーム画面への追加とキャッシュ | 使用中 |
+| SQLite | デスクトップ版・Web版共通のデータ保存 | 使用中 |
 | PyInstaller | macOSアプリのパッケージ作成 | 使用中 |
 | Pillow | ビルド時のアプリアイコン変換 | 使用中 |
-| SQLite | 支出データのデータベース管理 | 今後移行予定 |
 
 > [!IMPORTANT]
-> 現在の保存方式はCSVとJSONです。SQLiteはまだ実装されておらず、今後の
-> データ検索・編集機能の拡張に合わせて移行する予定です。
+> 以前の `kakeibo.csv` と `budgets.json` が存在する場合、SQLiteが空の初回起動時に
+> 自動でデータを移行します。移行後の保存先は `kakeibo.db` です。
 
 ## プロジェクト構成
 
 ```text
 kakeibo-app/
 ├── app.py                  # データ操作とターミナル版
+├── database.py             # 共有SQLiteデータ層
 ├── gui_app.py              # GUI版アプリ
+├── web/
+│   ├── app.py              # Flaskアプリ
+│   ├── templates/          # HTMLテンプレート
+│   └── static/             # CSS、JavaScript、PWAファイル
 ├── assets/
 │   └── app_icon.png        # アプリアイコン
 ├── scripts/
 │   └── build_macos.sh      # macOS用ビルドスクリプト
 ├── kakeibo.spec            # PyInstaller設定
 ├── requirements-build.txt  # ビルド用ライブラリ
+├── requirements-web.txt    # Web版用ライブラリ
 └── README.md
 ```
 
-実行時に作られる `kakeibo.csv` と `budgets.json` は個人データを含むため、
-Gitの管理対象から除外しています。
+実行時に作られる `kakeibo.db` と旧形式の `kakeibo.csv`・`budgets.json` は
+個人データを含むため、Gitの管理対象から除外しています。
 
 ## 今後追加予定の機能
 
-- [ ] CSV / JSONからSQLiteへのデータ移行
 - [ ] 登録済み支出の編集
 - [ ] 収入の登録と収支管理
 - [ ] 年間レポートとカテゴリ別予算
@@ -188,9 +228,9 @@ Gitの管理対象から除外しています。
 
 ## データについて
 
-ソースコードから起動した場合、支出は `kakeibo.csv`、予算は `budgets.json` に
-保存されます。これらのファイルには個人情報が含まれる可能性があるため、共有や
-Gitへの追加には注意してください。
+ソースコードから起動した場合、支出と予算は `kakeibo.db` に保存されます。
+このファイルには個人情報が含まれる可能性があるため、共有やGitへの追加には
+注意してください。
 
 ## ライセンス
 

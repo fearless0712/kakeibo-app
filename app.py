@@ -1,47 +1,35 @@
 """CSVにデータを保存する、初心者向けの家計簿アプリ。"""
 
-import csv
-import sys
 from datetime import datetime
-from pathlib import Path
+
+from database import (
+    get_data_directory,
+    get_expenses,
+    initialize_database,
+    replace_expenses,
+)
 
 
-def get_data_directory():
-    """実行方法に合わせて、ユーザーデータの保存フォルダを返します。"""
-    if getattr(sys, "frozen", False):
-        # Macアプリ版は、アプリ本体ではなくユーザー専用フォルダへ保存します。
-        directory = Path.home() / "Library" / "Application Support" / "Kakeibo"
-        directory.mkdir(parents=True, exist_ok=True)
-        return directory
-    return Path(__file__).parent
-
-
-DATA_FILE = get_data_directory() / "kakeibo.csv"
 FIELDNAMES = ["id", "date", "category", "memo", "amount"]
 CATEGORIES = ["食費", "日用品", "交通費", "娯楽", "住居費", "その他"]
 
 
 def initialize_file():
-    """CSVファイルがなければ、見出し行を作成します。"""
-    if not DATA_FILE.exists():
-        with DATA_FILE.open("w", newline="", encoding="utf-8-sig") as file:
-            writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-            writer.writeheader()
+    """SQLiteデータベースとテーブルを用意します。"""
+    initialize_database()
 
 
 def load_records():
-    """CSVから全データを読み込み、リストで返します。"""
-    initialize_file()
-    with DATA_FILE.open("r", newline="", encoding="utf-8-sig") as file:
-        return list(csv.DictReader(file))
+    """SQLiteから全データを読み込み、旧画面互換の文字列辞書で返します。"""
+    return [
+        {key: str(record[key]) for key in FIELDNAMES}
+        for record in get_expenses()
+    ]
 
 
 def save_records(records):
-    """受け取った全データをCSVに保存します。"""
-    with DATA_FILE.open("w", newline="", encoding="utf-8-sig") as file:
-        writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
-        writer.writeheader()
-        writer.writerows(records)
+    """受け取った全データでSQLiteの支出を置き換えます。"""
+    replace_expenses(records)
 
 
 def input_date():
