@@ -1,6 +1,6 @@
-const CACHE_NAME = "kakeibo-pwa-v1";
+const CACHE_NAME = "kakeibo-pwa-v2";
 const APP_SHELL = [
-  "/",
+  "/static/offline.html",
   "/static/css/style.css",
   "/static/js/app.js",
   "/static/manifest.json",
@@ -23,11 +23,8 @@ self.addEventListener("activate", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   if (event.request.mode === "navigate") {
-    event.respondWith(fetch(event.request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put("/", copy));
-      return response;
-    }).catch(() => caches.match("/")));
+    // 認証後の家計データをキャッシュへ残さないよう、HTMLは保存しません。
+    event.respondWith(fetch(event.request).catch(() => caches.match("/static/offline.html")));
     return;
   }
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));

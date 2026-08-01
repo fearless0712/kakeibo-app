@@ -4,6 +4,7 @@ budgets.json
 kakeibo.db
 kakeibo.db-shm
 kakeibo.db-wal
+pending_imports/
 
 # Python
 __pycache__/
@@ -26,3 +27,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+.env
+.env.*
+!.env.example
+*.log
+.pytest_cache/
+.coverage

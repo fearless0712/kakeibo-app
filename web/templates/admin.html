@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1120">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <title>データ管理 | EQUA</title>
+</head>
+<body>
+  <header class="app-header import-header">
+    <div><p class="eyebrow">DATA MANAGEMENT</p><h1><span class="logo-mark">◈</span> データ管理</h1><p>{{ current_user.username }} さんのデータだけを管理します。</p></div>
+    <div class="header-actions"><span class="version-chip">Version {{ app_version }}</span><a class="button button-secondary import-link" href="{{ url_for('index') }}">← ホームへ戻る</a></div>
+  </header>
+  <main class="admin-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="flash-message flash-{{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+
+    <section class="panel history-panel">
+      <div class="panel-title"><div><span>IMPORT HISTORY</span><h2>CSVインポート履歴</h2></div><strong>{{ history|length }}件</strong></div>
+      {% if history %}
+        <div class="table-wrap"><table><thead><tr><th>銀行</th><th>CSV種類</th><th>取込件数</th><th>収入件数</th><th>支出件数</th><th>重複件数</th><th>日時</th><th>ボタン</th></tr></thead><tbody>
+          {% for item in history %}<tr><td data-label="銀行">{{ item.bank }}</td><td data-label="CSV種類">{{ item.csv_type }}</td><td data-label="取込件数">{{ item.imported_count }}件</td><td data-label="収入件数">{{ item.income_count }}件</td><td data-label="支出件数">{{ item.expense_count }}件</td><td data-label="重複件数">{{ item.skipped_count }}件</td><td data-label="日時">{{ item.imported_at }}</td><td class="history-actions" data-label="ボタン"><form method="post" action="{{ url_for('reimport_history', history_id=item.id) }}"><button class="mini-button" type="submit" {{ 'disabled' if not item.can_reimport }}>再インポート</button></form><form method="post" action="{{ url_for('remove_import_history', history_id=item.id) }}" onsubmit="return confirm('このCSVで追加した取引を取り消しますか？残高と集計も再計算されます。')"><button class="delete-button" type="submit" {{ 'disabled' if not item.can_undo }}>取込削除</button></form></td></tr>{% endfor %}
+        </tbody></table></div>
+      {% else %}<div class="empty-state"><span>▥</span><p>インポート履歴はありません。</p></div>{% endif %}
+    </section>
+
+    <section class="panel danger-zone">
+      <div><span class="danger-kicker">DANGER ZONE</span><h2>全データをリセット</h2><p>ログイン中ユーザーの取引、CSVインポート履歴、重複判定を削除します。ユーザーアカウントと予算、他ユーザーのデータは削除しません。</p></div>
+      <form method="post" action="{{ url_for('reset_all_data') }}" onsubmit="return confirm('この操作は元に戻せません。本当に削除しますか？')">
+        <label>確認のため <strong>RESET</strong> と入力してください<input class="form-control" name="confirmation" autocomplete="off" required></label>
+        <button class="button danger-button" type="submit">全データをリセット</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

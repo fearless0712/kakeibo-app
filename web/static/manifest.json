@@ -1,7 +1,7 @@
 {
-  "name": "かんたん家計簿",
-  "short_name": "家計簿",
-  "description": "支出と予算をシンプルに管理できる家計簿アプリ",
+  "name": "EQUA 資産管理",
+  "short_name": "EQUA",
+  "description": "口座残高と収支を一元管理できる資産管理アプリ",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#070d1a",
