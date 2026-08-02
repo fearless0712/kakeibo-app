@@ -207,9 +207,11 @@ def get_database_status():
                 else None
             )
     return {
+        "database_url_present": bool(os.environ.get("DATABASE_URL", "").strip()),
         "backend": engine.dialect.name,
         "host": engine.url.host or "local",
         "database": engine.url.database or str(DATABASE_FILE),
+        "safe_url": engine.url.render_as_string(hide_password=True),
         "counts": counts,
     }
 

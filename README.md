@@ -169,7 +169,7 @@ export EQUA_DATA_DIR=/path/to/persistent/data
 
 Render Dashboardで手動構成する場合は、Render PostgresのInternal Database URLをWeb Serviceの`DATABASE_URL`へ設定して再デプロイします。
 
-Renderでは`DATABASE_URL`が未設定の場合、データを一時SQLiteへ保存して失うことがないようアプリの起動を停止します。Deploy Logsには接続先PostgreSQLのホスト、DB名、ユーザー件数、取引件数が出力されます。Render Shellでも次の診断を実行できます。
+Renderでは`DATABASE_URL`が未設定の場合、データを一時SQLiteへ保存して失うことがないようアプリの起動を停止します。Deploy Logsには`DATABASE_URL`の有無、SQLAlchemy backend、パスワードを伏せた接続URL、DB名、ユーザー件数、取引件数が出力されます。正常時は`DATABASE_URL present=true backend=postgresql`になります。Render Shellでも次の診断を実行できます。
 
 ```bash
 python3 scripts/check_database.py

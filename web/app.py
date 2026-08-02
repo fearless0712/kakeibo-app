@@ -80,8 +80,11 @@ def initialize_render_database():
     if status["backend"] != "postgresql":
         raise RuntimeError("Render本番環境のデータベースがPostgreSQLではありません")
     app.logger.info(
-        "Database connection: backend=%s host=%s database=%s users=%s transactions=%s",
+        "Database connection: DATABASE_URL present=%s backend=%s url=%s "
+        "host=%s database=%s users=%s transactions=%s",
+        str(status["database_url_present"]).lower(),
         status["backend"],
+        status["safe_url"],
         status["host"],
         status["database"],
         status["counts"]["users"],

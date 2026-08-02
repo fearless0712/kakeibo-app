@@ -80,6 +80,12 @@ class WebAppTest(unittest.TestCase):
         after = database.get_user_by_username("persistent-user")
         self.assertEqual(after, before)
 
+        status = database.get_database_status()
+        self.assertFalse(status["database_url_present"])
+        self.assertEqual(status["backend"], "sqlite")
+        self.assertTrue(status["safe_url"].startswith("sqlite:///"))
+        self.assertEqual(status["counts"]["users"], 1)
+
     def test_login_is_required_and_pwa_files_are_public(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 302)

@@ -14,7 +14,9 @@ from database import get_database_status, initialize_database  # noqa: E402
 
 initialize_database()
 status = get_database_status()
+print(f"DATABASE_URL present: {str(status['database_url_present']).lower()}")
 print(f"Backend: {status['backend']}")
+print(f"URL: {status['safe_url']}")
 print(f"Host: {status['host']}")
 print(f"Database: {status['database']}")
 for table_name, count in status["counts"].items():
