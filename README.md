@@ -162,8 +162,8 @@ export EQUA_DATA_DIR=/path/to/persistent/data
 
 1. GitHubリポジトリをRenderへ接続します。
 2. Blueprintとして`render.yaml`を読み込みます。
-3. Web Serviceと`equa-db` PostgreSQLが作成されます。
-4. `DATABASE_URL`はPostgreSQLの内部`connectionString`から自動設定されます。
+3. Web Serviceが既存の`kakeibo-db` PostgreSQLへ接続されることを確認します。
+4. `DATABASE_URL`は`kakeibo-db`の内部`connectionString`から自動設定されます。
 5. `KAKEIBO_SECRET_KEY`は設定ファイルに従って自動生成されます。
 
 Render Dashboardで手動構成する場合は、Render PostgresのInternal Database URLをWeb Serviceの`DATABASE_URL`へ設定して再デプロイします。

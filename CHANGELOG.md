@@ -17,6 +17,7 @@ EQUAの変更履歴はこのファイルに記録します。
 
 ### Fixed
 
+- Render Web Serviceの`DATABASE_URL`参照先を既存の`kakeibo-db`へ修正
 - iPhone Safari・Android Chromeで月別資産推移の高さが不足する問題を修正
 - Chart.js用の親要素に320px以上の高さを確保し、画面変更時に安全に再生成
 - 資産残高データがない場合の中央メッセージ表示を追加
