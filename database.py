@@ -6,7 +6,6 @@ import json
 import os
 import sqlite3
 import sys
-from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 
@@ -30,6 +29,8 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
+from utils.datetime import utc_now_string
 
 
 def get_data_directory():
@@ -77,7 +78,7 @@ class ImportHistoryModel(Base):
     __tablename__ = "import_history"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    imported_at: Mapped[str] = mapped_column(String(32), default=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nullable=False)
+    imported_at: Mapped[str] = mapped_column(String(32), default=utc_now_string, nullable=False)
     bank: Mapped[str] = mapped_column(String(150), default="不明", nullable=False)
     csv_type: Mapped[str] = mapped_column(String(200), nullable=False)
     imported_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -109,7 +110,7 @@ class TransactionModel(Base):
     balance: Mapped[int | None] = mapped_column(BigInteger)
     category: Mapped[str] = mapped_column(String(100), default="その他", nullable=False)
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
-    created_at: Mapped[str] = mapped_column(String(32), default=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nullable=False)
+    created_at: Mapped[str] = mapped_column(String(32), default=utc_now_string, nullable=False)
 
 
 class ExpenseModel(Base):
@@ -273,7 +274,7 @@ def _migrate_legacy_bank_transactions():
         for row in rows:
             account = _get_or_create_account(session, row["user_id"], row["source"], f"{row['source']}:default", f"{row['source']} 口座")
             if not session.scalar(select(TransactionModel.id).where(TransactionModel.user_id == row["user_id"], TransactionModel.fingerprint == row["fingerprint"])):
-                session.add(TransactionModel(user_id=row["user_id"], account_id=account.id, source=row["source"], date=row["date"], description=row["description"], amount=row["amount"], type=row["income_expense"], balance=row["balance"], category=row["category"], fingerprint=row["fingerprint"], created_at=row.get("created_at") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                session.add(TransactionModel(user_id=row["user_id"], account_id=account.id, source=row["source"], date=row["date"], description=row["description"], amount=row["amount"], type=row["income_expense"], balance=row["balance"], category=row["category"], fingerprint=row["fingerprint"], created_at=row.get("created_at") or utc_now_string()))
     with get_engine().begin() as connection:
         connection.execute(text("DROP TABLE bank_transactions"))
     _refresh_all_account_balances()

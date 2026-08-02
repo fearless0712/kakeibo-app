@@ -17,6 +17,8 @@ EQUAの変更履歴はこのファイルに記録します。
 
 ### Fixed
 
+- UTCで保存されたCSVインポート履歴の日時を画面表示時に日本時間（JST）へ変換
+- 今後の日時表示でも利用できる`zoneinfo`ベースの共通日時ユーティリティを追加
 - Render Web Serviceの`DATABASE_URL`参照先を既存の`kakeibo-db`へ修正
 - iPhone Safari・Android Chromeで月別資産推移の高さが不足する問題を修正
 - Chart.js用の親要素に320px以上の高さを確保し、画面変更時に安全に再生成

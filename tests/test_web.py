@@ -11,6 +11,7 @@ from pathlib import Path
 import database
 from web.parsers import detect_parser
 from web.parsers.sony import SonyParser
+from utils.datetime import format_datetime, to_jst
 
 web_app_module = importlib.import_module("web.app")
 app = web_app_module.app
@@ -41,6 +42,12 @@ class WebAppTest(unittest.TestCase):
             },
             follow_redirects=True,
         )
+
+    def test_utc_datetime_is_formatted_as_jst(self):
+        self.assertEqual(format_datetime("2026-08-02 07:13:00"), "2026-08-02 16:13")
+        self.assertEqual(format_datetime("2026-08-02T07:13:00Z"), "2026-08-02 16:13")
+        converted = to_jst("2026-08-02T07:13:00+00:00")
+        self.assertEqual(converted.utcoffset().total_seconds(), 9 * 60 * 60)
 
     def test_database_url_switches_between_sqlite_and_postgresql(self):
         with patch.dict("os.environ", {}, clear=False):
@@ -493,8 +500,15 @@ class WebAppTest(unittest.TestCase):
         history = database.get_import_history(user_id)
         self.assertTrue(history[0]["can_reimport"])
         history_id = history[0]["id"]
+        with database.connect() as connection:
+            connection.execute(
+                "UPDATE import_history SET imported_at = ? WHERE id = ?",
+                ("2026-08-02 07:13:00", history_id),
+            )
+            connection.commit()
         admin_page = self.client.get("/admin")
         admin_body = admin_page.get_data(as_text=True)
+        self.assertIn("2026-08-02 16:13", admin_body)
         for label in ("銀行", "CSV種類", "取込件数", "収入件数", "支出件数", "重複件数", "再インポート", "取込削除"):
             self.assertIn(label, admin_body)
         admin_page.close()

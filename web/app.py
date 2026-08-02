@@ -43,6 +43,7 @@ from database import (  # noqa: E402
     set_month_budget,
 )
 from web.parsers import PARSERS, detect_parser  # noqa: E402
+from utils.datetime import format_datetime  # noqa: E402
 
 
 app = Flask(__name__)
@@ -66,6 +67,7 @@ login_manager = LoginManager(app)
 login_manager.login_view = "login"
 login_manager.login_message = None
 login_manager.session_protection = "strong"
+app.jinja_env.filters["datetime_jst"] = format_datetime
 
 
 @app.context_processor

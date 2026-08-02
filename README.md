@@ -21,6 +21,7 @@ Flask製のWeb/PWA版を中心に、既存のTkinterデスクトップ版とタ�
 
 - 銀行CSVを共通の`Transaction`資産台帳へ統合
 - SQLAlchemy経由でSQLiteとPostgreSQLを自動切替
+- DBには日時をUTCで保存し、画面では共通フィルターにより日本時間（JST）で表示
 - `income`・`expense`に基づく一貫した収支集計
 - 複数ユーザー・複数口座のデータ分離
 - PCとスマートフォンに対応したダークテーマUI
