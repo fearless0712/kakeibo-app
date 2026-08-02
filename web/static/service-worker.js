@@ -1,4 +1,4 @@
-const CACHE_NAME = "kakeibo-pwa-v2";
+const CACHE_NAME = "equa-pwa-v2.0.1-asset-chart-fix";
 const APP_SHELL = [
   "/static/offline.html",
   "/static/css/style.css",

@@ -4,6 +4,9 @@ budgets.json
 kakeibo.db
 kakeibo.db-shm
 kakeibo.db-wal
+local.db
+local.db-shm
+local.db-wal
 pending_imports/
 
 # Python

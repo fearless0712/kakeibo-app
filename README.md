@@ -13,13 +13,14 @@
 
 ## EQUAとは
 
-EQUAは、銀行CSVと手入力の取引を共通のSQLite資産台帳へまとめ、残高・収入・支出・資産推移を可視化する個人向け資産管理アプリです。
+EQUAは、銀行CSVと手入力の取引を共通の資産台帳へまとめ、残高・収入・支出・資産推移を可視化する個人向け資産管理アプリです。
 
-Flask製のWeb/PWA版を中心に、既存のTkinterデスクトップ版とターミナル版も同じデータ層を利用できます。データは外部の家計簿サービスへ送信せず、ローカルまたは自分で用意したサーバーのSQLiteへ保存します。
+Flask製のWeb/PWA版を中心に、既存のTkinterデスクトップ版とターミナル版もSQLAlchemyデータ層を共有します。ローカルではSQLite、`DATABASE_URL`が設定された本番環境ではPostgreSQLを自動的に使用します。
 
 ## 特徴
 
 - 銀行CSVを共通の`Transaction`資産台帳へ統合
+- SQLAlchemy経由でSQLiteとPostgreSQLを自動切替
 - `income`・`expense`に基づく一貫した収支集計
 - 複数ユーザー・複数口座のデータ分離
 - PCとスマートフォンに対応したダークテーマUI
@@ -90,7 +91,9 @@ Flask製のWeb/PWA版を中心に、既存のTkinterデスクトップ版とタ�
 | Flask / Jinja | Webルーティング、HTML生成 |
 | Flask-Login | セッション認証とアクセス制御 |
 | Flask-Bcrypt | パスワードのハッシュ化 |
-| SQLite | ユーザー・口座・取引・予算・履歴の保存 |
+| SQLAlchemy 2 | SQLite / PostgreSQL共通のORM・スキーマ管理 |
+| SQLite | ローカル開発用の`local.db` |
+| PostgreSQL / psycopg | Render・Railwayなどの本番データベース |
 | HTML / CSS / JavaScript | レスポンシブなダークテーマUI |
 | Bootstrap 5 | 認証画面などのUI基盤 |
 | Chart.js | 資産・収支グラフ |
@@ -132,6 +135,13 @@ python web/app.py
 
 ブラウザで<http://127.0.0.1:5000/register>を開き、最初のユーザーを登録してください。
 
+`DATABASE_URL`がない場合はプロジェクト直下の`local.db`を使用します。PostgreSQLへ接続する場合は次のように設定します。
+
+```bash
+export DATABASE_URL="postgresql://user:password@host:5432/equa"
+python3 web/app.py
+```
+
 ### 公開環境向けGunicorn
 
 ```bash
@@ -140,27 +150,41 @@ export KAKEIBO_SECRET_KEY="十分に長いランダム値"
 gunicorn --workers 1 --threads 4 --bind 0.0.0.0:8000 web.app:app
 ```
 
-SQLiteの保存先は`EQUA_DATA_DIR`で変更できます。
+SQLiteの保存先は`EQUA_DATA_DIR`で変更できます。PostgreSQL使用時は`DATABASE_URL`が優先されます。
 
 ```bash
 export EQUA_DATA_DIR=/path/to/persistent/data
 ```
 
-> SQLiteを利用するため、Gunicornは1 workerで起動してください。Render・Railwayでは永続ディスクまたはVolumeが必要です。
+> `DATABASE_URL`を設定すると複数環境から1つのPostgreSQLデータベースを共有できます。
 
 ### Render
 
 1. GitHubリポジトリをRenderへ接続します。
 2. Blueprintとして`render.yaml`を読み込みます。
-3. Web Serviceと`/var/data`の永続ディスクを作成します。
-4. `KAKEIBO_SECRET_KEY`は設定ファイルに従って自動生成されます。
+3. Web Serviceと`equa-db` PostgreSQLが作成されます。
+4. `DATABASE_URL`はPostgreSQLの内部`connectionString`から自動設定されます。
+5. `KAKEIBO_SECRET_KEY`は設定ファイルに従って自動生成されます。
+
+Render Dashboardで手動構成する場合は、Render PostgresのInternal Database URLをWeb Serviceの`DATABASE_URL`へ設定して再デプロイします。
 
 ### Railway
 
 1. GitHubリポジトリをRailwayへ接続します。
-2. Volumeを追加し、例として`/data`へマウントします。
-3. `EQUA_DATA_DIR=/data`と`KAKEIBO_SECRET_KEY=<ランダム値>`を設定します。
+2. PostgreSQL Serviceを追加します。
+3. Railwayが提供する`DATABASE_URL`と`KAKEIBO_SECRET_KEY=<ランダム値>`をWeb Serviceへ設定します。
 4. `railway.json`の起動設定を使用してデプロイします。
+
+### SQLiteからPostgreSQLへ移行
+
+ユーザー、口座、取引、CSVインポート履歴、支出ミラー、予算の全テーブルを移行します。
+
+```bash
+export DATABASE_URL="Render PostgresのExternal Database URL"
+python3 scripts/migrate_sqlite_to_postgres.py --source kakeibo.db
+```
+
+`local.db`から移行する場合は`--source local.db`を指定します。移行先にデータがある場合は停止します。移行先を全置換する場合のみ`--replace`を付けてください。
 
 ### デスクトップ版
 
@@ -191,6 +215,13 @@ python3 -m pip install -r requirements-build.txt
 python3 -m unittest discover -s tests -v
 ```
 
+実際のPostgreSQLで新規登録・ログイン・Sony銀行CSV取込まで確認する場合は、検証用データベースのURLを指定します。テスト用ユーザーと関連データは終了時に削除されます。
+
+```bash
+export TEST_DATABASE_URL="postgresql://user:password@host:5432/equa_test"
+python3 -m unittest tests.test_postgres_integration -v
+```
+
 ## CSV対応銀行
 
 | 金融機関 | CSV | 状態 |
@@ -215,10 +246,11 @@ Sony銀行CSVはUTF-8とShift_JIS（CP932）に対応しています。共通形
 
 ## データ互換性と注意事項
 
-- 既存の`kakeibo.db`は削除せず、起動時に必要な列とインデックスだけを追加します。
+- 既存の`kakeibo.db`は削除しません。移行スクリプトでPostgreSQLへコピーできます。
+- `DATABASE_URL`未設定時の新規ローカルDBは`local.db`です。
 - 旧`kakeibo.csv`と`budgets.json`は、SQLiteが空の場合に自動移行します。
 - Version 2以前のインポート履歴は取引との関連情報がないため、安全のためCSV単位取消を無効化します。
-- `kakeibo.db`、CSV、環境変数ファイル、ビルド成果物はGit管理対象外です。
+- `local.db`、`kakeibo.db`、CSV、環境変数ファイル、ビルド成果物はGit管理対象外です。
 
 ## プロジェクト構成
 
@@ -234,6 +266,7 @@ kakeibo-app/
 │   └── static/
 ├── tests/
 ├── scripts/
+│   └── migrate_sqlite_to_postgres.py
 ├── requirements.txt
 ├── requirements-web.txt
 ├── requirements-build.txt
@@ -252,7 +285,7 @@ kakeibo-app/
 - [ ] CSV・PDFレポートのエクスポート
 - [ ] 定期収支の自動登録
 - [ ] 検索条件とダッシュボード設定の保存
-- [ ] PostgreSQL対応と複数インスタンス運用
+- [ ] Alembicによる本番スキーマバージョン管理
 - [ ] macOSアプリのコード署名・公証
 
 ## ライセンス

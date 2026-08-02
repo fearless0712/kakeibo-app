@@ -76,14 +76,29 @@ function drawBars() {
   });
 }
 
+let assetTrendChart = null;
+let cashflowChart = null;
+
 function drawAssetLine() {
   const canvas = document.querySelector("#asset-line-chart");
   if (!canvas) return;
   const data = window.KAKEIBO_CHARTS.assets;
+  const emptyMessage = document.querySelector("#asset-chart-empty");
+  if (!data.has_data || !data.labels.length) {
+    if (assetTrendChart) { assetTrendChart.destroy(); assetTrendChart = null; }
+    const registeredChart = window.Chart ? Chart.getChart(canvas) : null;
+    if (registeredChart) registeredChart.destroy();
+    canvas.hidden = true;
+    if (emptyMessage) emptyMessage.hidden = false;
+    return;
+  }
+  canvas.hidden = false;
+  if (emptyMessage) emptyMessage.hidden = true;
   if (window.Chart) {
+    if (assetTrendChart) assetTrendChart.destroy();
     const existing = Chart.getChart(canvas);
-    if (existing) { existing.resize(); return; }
-    new Chart(canvas, {
+    if (existing) existing.destroy();
+    assetTrendChart = new Chart(canvas, {
       type: "line",
       data: {
         labels: data.labels,
@@ -95,6 +110,8 @@ function drawAssetLine() {
       },
       options: chartOptions("資産残高")
     });
+    assetTrendChart.resize();
+    assetTrendChart.update("none");
     return;
   }
   const { context, width, height } = setupCanvas(canvas);
@@ -135,9 +152,10 @@ function drawCashflow() {
   if (!canvas) return;
   const data = window.KAKEIBO_CHARTS.cashflow;
   if (window.Chart) {
+    if (cashflowChart) cashflowChart.destroy();
     const existing = Chart.getChart(canvas);
-    if (existing) { existing.resize(); return; }
-    new Chart(canvas, {
+    if (existing) existing.destroy();
+    cashflowChart = new Chart(canvas, {
       type: "bar",
       data: {
         labels: data.labels,
@@ -149,6 +167,8 @@ function drawCashflow() {
       },
       options: chartOptions("収支")
     });
+    cashflowChart.resize();
+    cashflowChart.update("none");
     return;
   }
   const { context, width, height } = setupCanvas(canvas);
@@ -184,6 +204,7 @@ function chartOptions(label) {
   return {
     responsive: true,
     maintainAspectRatio: false,
+    resizeDelay: 100,
     interaction: { mode: "index", intersect: false },
     plugins: {
       legend: { labels: { color: "#cbd5e1", usePointStyle: true } },
@@ -209,4 +230,9 @@ installButton?.addEventListener("click", async () => {
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js");
 let resizeTimer;
 window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { drawPie(); drawBars(); drawAssetLine(); drawCashflow(); }, 120); });
-drawPie(); drawBars(); drawAssetLine(); drawCashflow();
+function renderAllCharts() {
+  drawPie(); drawBars(); drawAssetLine(); drawCashflow();
+}
+requestAnimationFrame(() => requestAnimationFrame(renderAllCharts));
+window.addEventListener("pageshow", event => { if (event.persisted) requestAnimationFrame(renderAllCharts); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) requestAnimationFrame(renderAllCharts); });

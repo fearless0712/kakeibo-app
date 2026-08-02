@@ -2,6 +2,26 @@
 
 EQUAの変更履歴はこのファイルに記録します。
 
+## [Unreleased]
+
+### Added
+
+- SQLAlchemy 2によるSQLite / PostgreSQL共通データ層
+- 全テーブルをSQLiteからPostgreSQLへ移す移行スクリプト
+- Render Blueprintで作成するPostgreSQLと`DATABASE_URL`の自動接続設定
+
+### Changed
+
+- `DATABASE_URL`設定時はPostgreSQL、未設定時は`local.db`を使用する構成へ変更
+- Render・Railway・ローカル環境のデータベース設定手順をREADMEへ追加
+
+### Fixed
+
+- iPhone Safari・Android Chromeで月別資産推移の高さが不足する問題を修正
+- Chart.js用の親要素に320px以上の高さを確保し、画面変更時に安全に再生成
+- 資産残高データがない場合の中央メッセージ表示を追加
+- Service Workerのキャッシュ名を更新し、スマートフォンの旧CSS・JavaScriptを破棄
+
 ## [v2.0.0] - 2026-08-02
 
 ### Added

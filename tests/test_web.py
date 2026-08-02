@@ -5,6 +5,7 @@ import importlib
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 import database
@@ -40,6 +41,25 @@ class WebAppTest(unittest.TestCase):
             },
             follow_redirects=True,
         )
+
+    def test_database_url_switches_between_sqlite_and_postgresql(self):
+        with patch.dict("os.environ", {}, clear=False):
+            import os
+
+            os.environ.pop("DATABASE_URL", None)
+            self.assertEqual(
+                database.get_database_url(),
+                f"sqlite:///{database.DATABASE_FILE.resolve()}",
+            )
+
+        with patch.dict(
+            "os.environ",
+            {"DATABASE_URL": "postgres://user:password@db.example/equa"},
+        ):
+            self.assertEqual(
+                database.get_database_url(),
+                "postgresql+psycopg://user:password@db.example/equa",
+            )
 
     def test_login_is_required_and_pwa_files_are_public(self):
         response = self.client.get("/")
@@ -435,6 +455,9 @@ class WebAppTest(unittest.TestCase):
 
     def test_asset_dashboard_drag_drop_and_import_history_actions(self):
         self.register(self.client, "alice")
+        empty_page = self.client.get("/").get_data(as_text=True)
+        self.assertIn("表示できる資産データがありません", empty_page)
+        self.assertIn('id="asset-line-chart" aria-label="月別残高の折れ線グラフ" hidden', empty_page)
         fixture = Path(__file__).parent / "fixtures" / "FutsuRireki.csv"
         response = self.client.post(
             "/import-csv",
@@ -450,7 +473,17 @@ class WebAppTest(unittest.TestCase):
         self.assertIn("合計資産", body)
         self.assertIn("月別資産推移", body)
         self.assertIn("998,750円", body)
+        self.assertIn('class="chart-canvas-container" id="asset-chart-container"', body)
+        self.assertNotIn('id="asset-line-chart" aria-label="月別残高の折れ線グラフ" hidden', body)
         response.close()
+
+        css = (Path(__file__).parents[1] / "web/static/css/style.css").read_text()
+        javascript = (Path(__file__).parents[1] / "web/static/js/app.js").read_text()
+        self.assertIn("min-height: 320px", css)
+        self.assertIn("responsive: true", javascript)
+        self.assertIn("maintainAspectRatio: false", javascript)
+        self.assertIn("assetTrendChart.destroy()", javascript)
+        self.assertIn('assetTrendChart.update("none")', javascript)
 
         import_page = self.client.get("/import-csv")
         self.assertIn("ドラッグ＆ドロップ", import_page.get_data(as_text=True))

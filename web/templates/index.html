@@ -160,11 +160,16 @@
     </section>
     <section class="panel chart-panel asset-trend-panel">
       <div class="panel-title"><div><span>ASSET TREND</span><h2>月別資産推移</h2></div></div>
-      <canvas id="asset-line-chart" aria-label="月別残高の折れ線グラフ"></canvas>
+      <div class="chart-canvas-container" id="asset-chart-container">
+        <canvas id="asset-line-chart" aria-label="月別残高の折れ線グラフ" {{ 'hidden' if not lifetime_asset_chart.has_data }}></canvas>
+        <p class="chart-empty-message" id="asset-chart-empty" {{ 'hidden' if lifetime_asset_chart.has_data }}>表示できる資産データがありません</p>
+      </div>
     </section>
     <section class="panel chart-panel asset-trend-panel">
       <div class="panel-title"><div><span>MONTHLY CASH FLOW</span><h2>月別収支推移</h2></div></div>
-      <canvas id="cashflow-chart" aria-label="月別収支推移のグラフ"></canvas>
+      <div class="chart-canvas-container">
+        <canvas id="cashflow-chart" aria-label="月別収支推移のグラフ"></canvas>
+      </div>
     </section>
 
     <section class="report-grid">
