@@ -13,7 +13,3 @@ services:
         fromDatabase:
           name: kakeibo-db
           property: connectionString
-
-databases:
-  - name: kakeibo-db
-    plan: free

@@ -36,6 +36,7 @@ from database import (  # noqa: E402
     get_user_by_id,
     get_user_by_username,
     get_data_directory,
+    get_database_status,
     import_bank_transactions,
     initialize_database,
     reset_user_data,
@@ -68,6 +69,27 @@ login_manager.login_view = "login"
 login_manager.login_message = None
 login_manager.session_protection = "strong"
 app.jinja_env.filters["datetime_jst"] = format_datetime
+
+
+def initialize_render_database():
+    """RenderではPostgreSQL接続を起動時に検証し、SQLiteへの退避を禁止する。"""
+    if os.environ.get("RENDER", "").lower() != "true":
+        return
+    initialize_database()
+    status = get_database_status()
+    if status["backend"] != "postgresql":
+        raise RuntimeError("Render本番環境のデータベースがPostgreSQLではありません")
+    app.logger.info(
+        "Database connection: backend=%s host=%s database=%s users=%s transactions=%s",
+        status["backend"],
+        status["host"],
+        status["database"],
+        status["counts"]["users"],
+        status["counts"]["transactions"],
+    )
+
+
+initialize_render_database()
 
 
 @app.context_processor

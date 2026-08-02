@@ -68,6 +68,18 @@ class WebAppTest(unittest.TestCase):
                 "postgresql+psycopg://user:password@db.example/equa",
             )
 
+        with patch.dict("os.environ", {"RENDER": "true"}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "DATABASE_URL"):
+                database.get_database_url()
+
+    def test_initialize_database_keeps_existing_user(self):
+        self.register(self.client, "persistent-user")
+        before = database.get_user_by_username("persistent-user")
+        database.initialize_database()
+        database.initialize_database()
+        after = database.get_user_by_username("persistent-user")
+        self.assertEqual(after, before)
+
     def test_login_is_required_and_pwa_files_are_public(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 302)

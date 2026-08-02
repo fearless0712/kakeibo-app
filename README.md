@@ -163,11 +163,27 @@ export EQUA_DATA_DIR=/path/to/persistent/data
 
 1. GitHubリポジトリをRenderへ接続します。
 2. Blueprintとして`render.yaml`を読み込みます。
-3. Web Serviceが既存の`kakeibo-db` PostgreSQLへ接続されることを確認します。
+3. Web Serviceが同じRender Workspaceにある既存の`kakeibo-db` PostgreSQLへ接続されることを確認します。`render.yaml`はデータベースを新規作成せず、既存DBを参照します。
 4. `DATABASE_URL`は`kakeibo-db`の内部`connectionString`から自動設定されます。
 5. `KAKEIBO_SECRET_KEY`は設定ファイルに従って自動生成されます。
 
 Render Dashboardで手動構成する場合は、Render PostgresのInternal Database URLをWeb Serviceの`DATABASE_URL`へ設定して再デプロイします。
+
+Renderでは`DATABASE_URL`が未設定の場合、データを一時SQLiteへ保存して失うことがないようアプリの起動を停止します。Deploy Logsには接続先PostgreSQLのホスト、DB名、ユーザー件数、取引件数が出力されます。Render Shellでも次の診断を実行できます。
+
+```bash
+python3 scripts/check_database.py
+```
+
+#### 旧Render SQLiteからユーザーを復元する
+
+PostgreSQL切替前のユーザーは旧永続ディスク`equa-data`の`/var/data/kakeibo.db`に保存されています。Render Dashboardで元のディスクが残っていることを確認し、一時的に同じWeb Serviceへ`/var/data`として再接続したうえで、Render Shellから移行します。
+
+```bash
+python3 scripts/migrate_sqlite_to_postgres.py --source /var/data/kakeibo.db
+```
+
+移行先PostgreSQLに切替後の仮ユーザーが既に存在し、旧SQLiteを正として完全復元する場合は、先にPostgreSQLのバックアップを取得してから`--replace`を指定します。`create_all()`は存在しないテーブルを作るだけで、既存ユーザーやテーブルを削除しません。
 
 ### Railway
 

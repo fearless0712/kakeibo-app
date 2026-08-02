@@ -17,6 +17,10 @@ EQUAの変更履歴はこのファイルに記録します。
 
 ### Fixed
 
+- Render Blueprintを既存`kakeibo-db`の参照専用にし、別PostgreSQLの意図しない作成を防止
+- Renderで`DATABASE_URL`がない場合の一時SQLiteへのフォールバックを禁止
+- 起動ログと診断スクリプトに接続先DB・ユーザー件数・取引件数を追加
+- 旧Render永続ディスクのSQLiteからユーザーを復元する手順をREADMEへ追加
 - UTCで保存されたCSVインポート履歴の日時を画面表示時に日本時間（JST）へ変換
 - 今後の日時表示でも利用できる`zoneinfo`ベースの共通日時ユーティリティを追加
 - Render Web Serviceの`DATABASE_URL`参照先を既存の`kakeibo-db`へ修正

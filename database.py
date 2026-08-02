@@ -149,6 +149,11 @@ def get_database_url():
         elif configured.startswith("postgresql://"):
             configured = "postgresql+psycopg://" + configured[len("postgresql://") :]
         return configured
+    if os.environ.get("RENDER", "").lower() == "true":
+        raise RuntimeError(
+            "Render本番環境にDATABASE_URLが設定されていません。"
+            "SQLiteへのフォールバックはデータ消失を防ぐため無効です。"
+        )
     return f"sqlite:///{DATABASE_FILE.resolve()}"
 
 
@@ -185,6 +190,28 @@ def get_session():
 
 def is_postgresql():
     return get_engine().dialect.name == "postgresql"
+
+
+def get_database_status():
+    """パスワードを含めず、接続先と主要データ件数を診断用に返します。"""
+    engine = get_engine()
+    schema = inspect(engine)
+    counts = {}
+    with engine.connect() as connection:
+        for table_name in ("users", "transactions", "accounts", "import_history", "budgets"):
+            counts[table_name] = (
+                connection.scalar(
+                    select(func.count()).select_from(Base.metadata.tables[table_name])
+                )
+                if schema.has_table(table_name)
+                else None
+            )
+    return {
+        "backend": engine.dialect.name,
+        "host": engine.url.host or "local",
+        "database": engine.url.database or str(DATABASE_FILE),
+        "counts": counts,
+    }
 
 
 def connect():
